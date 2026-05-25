@@ -11,16 +11,9 @@ interface Service {
   duration: string
 }
 
-interface Company {
-  id: string
-  name: string
-}
-
 export default function ServicesPage() {
 
   const router = useRouter()
-
-  const [companyData, setCompanyData] = useState<Company | null>(null)
 
   const [services, setServices] = useState<Service[]>([])
 
@@ -28,41 +21,31 @@ export default function ServicesPage() {
   const [price, setPrice] = useState('')
   const [duration, setDuration] = useState('')
 
+  const [loading, setLoading] = useState(true)
+
   useEffect(() => {
-    fetchCompany()
+    checkUser()
   }, [])
 
-  const fetchCompany = async () => {
+  const checkUser = async () => {
 
-    const slug = localStorage.getItem('company_slug')
+    const {
+      data: { session }
+    } = await supabase.auth.getSession()
 
-    if (!slug) {
+    if (!session) {
       router.push('/login')
       return
     }
 
-    const { data, error } = await supabase
-      .from('companies')
-      .select('*')
-      .eq('slug', slug)
-      .single()
-
-    if (error || !data) {
-      router.push('/login')
-      return
-    }
-
-    setCompanyData(data)
-
-    fetchServices(data.id)
+    fetchServices()
   }
 
-  const fetchServices = async (companyId: string) => {
+  const fetchServices = async () => {
 
     const { data, error } = await supabase
       .from('services')
       .select('*')
-      .eq('company_id', companyId)
       .order('created_at', { ascending: false })
 
     if (error) {
@@ -71,6 +54,7 @@ export default function ServicesPage() {
     }
 
     setServices(data || [])
+    setLoading(false)
   }
 
   const createService = async () => {
@@ -84,7 +68,6 @@ export default function ServicesPage() {
       .from('services')
       .insert([
         {
-          company_id: companyData?.id,
           name,
           price,
           duration
@@ -101,9 +84,7 @@ export default function ServicesPage() {
     setPrice('')
     setDuration('')
 
-    if (companyData) {
-      fetchServices(companyData.id)
-    }
+    fetchServices()
   }
 
   const deleteService = async (id: string) => {
@@ -124,9 +105,7 @@ export default function ServicesPage() {
       return
     }
 
-    if (companyData) {
-      fetchServices(companyData.id)
-    }
+    fetchServices()
   }
 
   return (
@@ -157,90 +136,104 @@ export default function ServicesPage() {
 
         </div>
 
-        <div className="bg-zinc-900 rounded-3xl p-8 mb-10">
+        {loading ? (
 
-          <h2 className="text-3xl font-bold mb-6">
-            Novo Serviço
-          </h2>
-
-          <div className="grid md:grid-cols-3 gap-4">
-
-            <input
-              type="text"
-              placeholder="Nome do serviço"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="bg-zinc-800 border border-zinc-700 rounded-2xl p-4 text-white"
-            />
-
-            <input
-              type="number"
-              placeholder="Preço"
-              value={price}
-              onChange={(e) => setPrice(e.target.value)}
-              className="bg-zinc-800 border border-zinc-700 rounded-2xl p-4 text-white"
-            />
-
-            <input
-              type="text"
-              placeholder="Duração"
-              value={duration}
-              onChange={(e) => setDuration(e.target.value)}
-              className="bg-zinc-800 border border-zinc-700 rounded-2xl p-4 text-white"
-            />
-
+          <div className="text-center py-20 text-2xl">
+            Carregando...
           </div>
 
-          <button
-            onClick={createService}
-            className="mt-6 bg-green-500 hover:bg-green-600 transition px-8 py-4 rounded-2xl text-xl font-bold"
-          >
-            Criar Serviço
-          </button>
+        ) : (
 
-        </div>
+          <>
 
-        <div className="grid gap-6">
+            <div className="bg-zinc-900 rounded-3xl p-8 mb-10">
 
-          {services.map((service) => (
+              <h2 className="text-3xl font-bold mb-6">
+                Novo Serviço
+              </h2>
 
-            <div
-              key={service.id}
-              className="bg-zinc-900 rounded-3xl p-6"
-            >
+              <div className="grid md:grid-cols-3 gap-4">
 
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+                <input
+                  type="text"
+                  placeholder="Nome do serviço"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="bg-zinc-800 border border-zinc-700 rounded-2xl p-4 text-white"
+                />
 
-                <div>
+                <input
+                  type="number"
+                  placeholder="Preço"
+                  value={price}
+                  onChange={(e) => setPrice(e.target.value)}
+                  className="bg-zinc-800 border border-zinc-700 rounded-2xl p-4 text-white"
+                />
 
-                  <h3 className="text-3xl font-bold mb-2">
-                    {service.name}
-                  </h3>
-
-                  <p className="text-zinc-400 text-lg">
-                    💰 R$ {service.price}
-                  </p>
-
-                  <p className="text-zinc-400 text-lg">
-                    ⏱️ {service.duration}
-                  </p>
-
-                </div>
-
-                <button
-                  onClick={() => deleteService(service.id)}
-                  className="bg-red-500 hover:bg-red-600 transition px-6 py-4 rounded-2xl text-lg font-bold"
-                >
-                  Excluir
-                </button>
+                <input
+                  type="text"
+                  placeholder="Duração"
+                  value={duration}
+                  onChange={(e) => setDuration(e.target.value)}
+                  className="bg-zinc-800 border border-zinc-700 rounded-2xl p-4 text-white"
+                />
 
               </div>
 
+              <button
+                onClick={createService}
+                className="mt-6 bg-green-500 hover:bg-green-600 transition px-8 py-4 rounded-2xl text-xl font-bold"
+              >
+                Criar Serviço
+              </button>
+
             </div>
 
-          ))}
+            <div className="grid gap-6">
 
-        </div>
+              {services.map((service) => (
+
+                <div
+                  key={service.id}
+                  className="bg-zinc-900 rounded-3xl p-6"
+                >
+
+                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+
+                    <div>
+
+                      <h3 className="text-3xl font-bold mb-2">
+                        {service.name}
+                      </h3>
+
+                      <p className="text-zinc-400 text-lg">
+                        💰 R$ {service.price}
+                      </p>
+
+                      <p className="text-zinc-400 text-lg">
+                        ⏱️ {service.duration}
+                      </p>
+
+                    </div>
+
+                    <button
+                      onClick={() => deleteService(service.id)}
+                      className="bg-red-500 hover:bg-red-600 transition px-6 py-4 rounded-2xl text-lg font-bold"
+                    >
+                      Excluir
+                    </button>
+
+                  </div>
+
+                </div>
+
+              ))}
+
+            </div>
+
+          </>
+
+        )}
 
       </div>
 
