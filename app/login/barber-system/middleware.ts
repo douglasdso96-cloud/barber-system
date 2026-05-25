@@ -1,18 +1,26 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
-export async function middleware(request: NextRequest) {
+export function middleware(request: NextRequest) {
 
-  const accessToken = request.cookies
-    .getAll()
-    .find(cookie =>
-      cookie.name.includes('access-token')
+  const isLogged =
+    request.cookies.get('admin-auth')?.value
+
+  const pathname = request.nextUrl.pathname
+
+  const protectedRoutes = [
+    '/admin',
+    '/admin/services',
+    '/admin/professionals',
+    '/admin/appointments'
+  ]
+
+  const isProtectedRoute =
+    protectedRoutes.some((route) =>
+      pathname.startsWith(route)
     )
 
-  const isAdminRoute =
-    request.nextUrl.pathname.startsWith('/admin')
-
-  if (isAdminRoute && !accessToken) {
+  if (isProtectedRoute && !isLogged) {
 
     return NextResponse.redirect(
       new URL('/login', request.url)
