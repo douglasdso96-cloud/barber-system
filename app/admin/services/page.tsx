@@ -12,37 +12,26 @@ interface Service {
 }
 
 export default function ServicesPage() {
-
   const router = useRouter()
 
   const [services, setServices] = useState<Service[]>([])
-
   const [name, setName] = useState('')
   const [price, setPrice] = useState('')
   const [duration, setDuration] = useState('')
-
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    checkUser()
-  }, [])
+    const isLogged = document.cookie.includes('admin-auth=true')
 
-  const checkUser = async () => {
-
-    const {
-      data: { session }
-    } = await supabase.auth.getSession()
-
-    if (!session) {
+    if (!isLogged) {
       router.push('/login')
       return
     }
 
     fetchServices()
-  }
+  }, [])
 
   const fetchServices = async () => {
-
     const { data, error } = await supabase
       .from('services')
       .select('*')
@@ -50,6 +39,7 @@ export default function ServicesPage() {
 
     if (error) {
       console.log(error)
+      setLoading(false)
       return
     }
 
@@ -58,21 +48,18 @@ export default function ServicesPage() {
   }
 
   const createService = async () => {
-
     if (!name || !price || !duration) {
       alert('Preencha todos os campos')
       return
     }
 
-    const { error } = await supabase
-      .from('services')
-      .insert([
-        {
-          name,
-          price,
-          duration
-        }
-      ])
+    const { error } = await supabase.from('services').insert([
+      {
+        name,
+        price,
+        duration
+      }
+    ])
 
     if (error) {
       console.log(error)
@@ -83,16 +70,11 @@ export default function ServicesPage() {
     setName('')
     setPrice('')
     setDuration('')
-
     fetchServices()
   }
 
   const deleteService = async (id: string) => {
-
-    const confirmDelete = confirm(
-      'Deseja excluir este serviço?'
-    )
-
+    const confirmDelete = confirm('Deseja excluir este serviço?')
     if (!confirmDelete) return
 
     const { error } = await supabase
@@ -108,23 +90,19 @@ export default function ServicesPage() {
     fetchServices()
   }
 
+  const handleLogout = async () => {
+    document.cookie = 'admin-auth=; path=/; max-age=0'
+    await supabase.auth.signOut()
+    router.push('/login')
+  }
+
   return (
     <main className="min-h-screen bg-black text-white p-6">
-
       <div className="max-w-6xl mx-auto">
-
         <div className="flex items-center justify-between mb-10">
-
           <div>
-
-            <h1 className="text-5xl font-bold mb-2">
-              Serviços
-            </h1>
-
-            <p className="text-zinc-400">
-              Gerencie os serviços da empresa
-            </p>
-
+            <h1 className="text-5xl font-bold mb-2">Serviços</h1>
+            <p className="text-zinc-400">Gerencie os serviços da empresa</p>
           </div>
 
           <button
@@ -133,27 +111,16 @@ export default function ServicesPage() {
           >
             Voltar
           </button>
-
         </div>
 
         {loading ? (
-
-          <div className="text-center py-20 text-2xl">
-            Carregando...
-          </div>
-
+          <div className="text-center py-20 text-2xl">Carregando...</div>
         ) : (
-
           <>
-
             <div className="bg-zinc-900 rounded-3xl p-8 mb-10">
-
-              <h2 className="text-3xl font-bold mb-6">
-                Novo Serviço
-              </h2>
+              <h2 className="text-3xl font-bold mb-6">Novo Serviço</h2>
 
               <div className="grid md:grid-cols-3 gap-4">
-
                 <input
                   type="text"
                   placeholder="Nome do serviço"
@@ -177,7 +144,6 @@ export default function ServicesPage() {
                   onChange={(e) => setDuration(e.target.value)}
                   className="bg-zinc-800 border border-zinc-700 rounded-2xl p-4 text-white"
                 />
-
               </div>
 
               <button
@@ -186,22 +152,16 @@ export default function ServicesPage() {
               >
                 Criar Serviço
               </button>
-
             </div>
 
             <div className="grid gap-6">
-
               {services.map((service) => (
-
                 <div
                   key={service.id}
                   className="bg-zinc-900 rounded-3xl p-6"
                 >
-
                   <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-
                     <div>
-
                       <h3 className="text-3xl font-bold mb-2">
                         {service.name}
                       </h3>
@@ -213,7 +173,6 @@ export default function ServicesPage() {
                       <p className="text-zinc-400 text-lg">
                         ⏱️ {service.duration}
                       </p>
-
                     </div>
 
                     <button
@@ -222,21 +181,20 @@ export default function ServicesPage() {
                     >
                       Excluir
                     </button>
-
                   </div>
-
                 </div>
-
               ))}
-
             </div>
 
+            <button
+              onClick={handleLogout}
+              className="mt-10 bg-red-500 hover:bg-red-600 transition px-6 py-3 rounded-2xl font-bold"
+            >
+              Sair
+            </button>
           </>
-
         )}
-
       </div>
-
     </main>
   )
 }
