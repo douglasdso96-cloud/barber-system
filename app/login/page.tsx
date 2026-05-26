@@ -10,24 +10,55 @@ export default function LoginPage() {
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-
   const [loading, setLoading] = useState(false)
 
   const handleLogin = async () => {
 
     setLoading(true)
 
-    const { error } = await supabase.auth.signInWithPassword({
+    const {
+      data,
+      error
+    } = await supabase.auth.signInWithPassword({
       email,
       password
     })
 
-    if (error) {
+    if (error || !data.user) {
 
       alert('Email ou senha inválidos')
+
       setLoading(false)
+
       return
     }
+
+    const userId = data.user.id
+
+    const {
+      data: company,
+      error: companyError
+    } = await supabase
+      .from('companies')
+      .select('*')
+      .eq('user_id', userId)
+      .single()
+
+    if (companyError || !company) {
+
+      console.log(companyError)
+
+      alert('Empresa não encontrada')
+
+      setLoading(false)
+
+      return
+    }
+
+    localStorage.setItem(
+      'company_id',
+      company.id
+    )
 
     document.cookie =
       'admin-auth=true; path=/; max-age=86400; SameSite=Lax'
