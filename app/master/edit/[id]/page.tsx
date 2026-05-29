@@ -1,187 +1,209 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useParams, useRouter } from 'next/navigation'
-import { supabase } from '../../../../lib/supabase'
+import { useRouter } from 'next/navigation'
+import { supabase } from '../../lib/supabase'
 
-export default function EditCompanyPage() {
+interface Company {
+  id: string
+  name: string
+  slug: string
+  whatsapp: string
+  address: string
+  email: string
+}
 
-  const params = useParams()
+export default function MasterPage() {
   const router = useRouter()
+
+  const [companies, setCompanies] =
+    useState<Company[]>([])
 
   const [loading, setLoading] =
     useState(true)
 
-  const [saving, setSaving] =
-    useState(false)
-
-  const [name, setName] =
-    useState('')
-
-  const [slug, setSlug] =
-    useState('')
-
-  const [email, setEmail] =
-    useState('')
-
-  const [whatsapp, setWhatsapp] =
-    useState('')
-
-  const [address, setAddress] =
-    useState('')
-
   useEffect(() => {
-    fetchCompany()
+    validateAdmin()
   }, [])
 
-  const fetchCompany = async () => {
+  const validateAdmin = async () => {
+
+    const {
+      data: { user }
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      router.push('/login')
+      return
+    }
+
+    const { data: admin } =
+      await supabase
+        .from('admins')
+        .select('*')
+        .eq('user_id', user.id)
+        .single()
+
+    if (!admin) {
+
+      alert(
+        'Acesso permitido apenas para administradores.'
+      )
+
+      router.push('/admin')
+
+      return
+    }
+
+    fetchCompanies()
+  }
+
+  const fetchCompanies = async () => {
 
     const { data, error } =
       await supabase
         .from('companies')
         .select('*')
-        .eq('id', params.id)
-        .single()
+        .order('created_at', {
+          ascending: false
+        })
 
-    if (error || !data) {
-
-      alert('Empresa não encontrada')
-
-      router.push('/master')
-
+    if (error) {
+      console.log(error)
       return
     }
 
-    setName(data.name || '')
-    setSlug(data.slug || '')
-    setEmail(data.email || '')
-    setWhatsapp(data.whatsapp || '')
-    setAddress(data.address || '')
-
+    setCompanies(data || [])
     setLoading(false)
   }
 
-  const handleSave = async () => {
+  const deleteCompany = async (
+    id: string
+  ) => {
 
-    setSaving(true)
+    const confirmDelete = confirm(
+      'Deseja excluir esta empresa?'
+    )
 
-    const { error } =
-      await supabase
-        .from('companies')
-        .update({
-          name,
-          slug,
-          email,
-          whatsapp,
-          address
-        })
-        .eq('id', params.id)
+    if (!confirmDelete) return
 
-    setSaving(false)
+    const { error } = await supabase
+      .from('companies')
+      .delete()
+      .eq('id', id)
 
     if (error) {
-
-      console.log(error)
-
-      alert('Erro ao salvar')
-
+      alert('Erro ao excluir')
       return
     }
 
-    alert('Empresa atualizada com sucesso')
-
-    router.push('/master')
-  }
-
-  if (loading) {
-
-    return (
-      <main className="min-h-screen bg-black text-white flex items-center justify-center">
-        Carregando...
-      </main>
-    )
+    fetchCompanies()
   }
 
   return (
     <main className="min-h-screen bg-black text-white p-6">
 
-      <div className="max-w-2xl mx-auto">
+      <div className="max-w-7xl mx-auto">
 
-        <h1 className="text-5xl font-bold mb-10">
-          Editar Empresa
-        </h1>
+        <div className="flex items-center justify-between mb-10">
 
-        <div className="space-y-5">
+          <div>
 
-          <input
-            value={name}
-            onChange={(e) =>
-              setName(e.target.value)
-            }
-            placeholder="Nome"
-            className="w-full bg-zinc-900 p-5 rounded-2xl"
-          />
+            <h1 className="text-5xl font-bold mb-3">
+              Painel Master
+            </h1>
 
-          <input
-            value={slug}
-            onChange={(e) =>
-              setSlug(e.target.value)
-            }
-            placeholder="Slug"
-            className="w-full bg-zinc-900 p-5 rounded-2xl"
-          />
-
-          <input
-            value={email}
-            onChange={(e) =>
-              setEmail(e.target.value)
-            }
-            placeholder="Email"
-            className="w-full bg-zinc-900 p-5 rounded-2xl"
-          />
-
-          <input
-            value={whatsapp}
-            onChange={(e) =>
-              setWhatsapp(e.target.value)
-            }
-            placeholder="WhatsApp"
-            className="w-full bg-zinc-900 p-5 rounded-2xl"
-          />
-
-          <input
-            value={address}
-            onChange={(e) =>
-              setAddress(e.target.value)
-            }
-            placeholder="Endereço"
-            className="w-full bg-zinc-900 p-5 rounded-2xl"
-          />
-
-          <div className="flex gap-4">
-
-            <button
-              onClick={handleSave}
-              disabled={saving}
-              className="bg-green-500 hover:bg-green-600 px-6 py-4 rounded-2xl font-bold"
-            >
-              {saving
-                ? 'Salvando...'
-                : 'Salvar'}
-            </button>
-
-            <button
-              onClick={() =>
-                router.push('/master')
-              }
-              className="bg-zinc-700 hover:bg-zinc-600 px-6 py-4 rounded-2xl font-bold"
-            >
-              Cancelar
-            </button>
+            <p className="text-zinc-400">
+              Gerencie todas as barbearias
+            </p>
 
           </div>
 
+          <button
+            onClick={() => router.push('/admin')}
+            className="bg-zinc-800 hover:bg-zinc-700 transition px-6 py-3 rounded-2xl font-bold"
+          >
+            Voltar
+          </button>
+
         </div>
+
+        {loading ? (
+
+          <div className="text-center py-20 text-2xl">
+            Carregando...
+          </div>
+
+        ) : (
+
+          <div className="grid gap-6">
+
+            {companies.map((company) => (
+
+              <div
+                key={company.id}
+                className="bg-zinc-900 rounded-3xl p-8"
+              >
+
+                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+
+                  <div>
+
+                    <h2 className="text-3xl font-bold mb-3">
+                      {company.name}
+                    </h2>
+
+                    <p className="text-zinc-400 text-lg">
+                      🔗 /{company.slug}
+                    </p>
+
+                    <p className="text-zinc-400 text-lg">
+                      📧 {company.email}
+                    </p>
+
+                    <p className="text-zinc-400 text-lg">
+                      📞 {company.whatsapp}
+                    </p>
+
+                    <p className="text-zinc-400 text-lg">
+                      📍 {company.address}
+                    </p>
+
+                  </div>
+
+                  <div className="flex gap-4">
+
+                    <button
+                      onClick={() =>
+                        router.push(
+                          `/master/edit/${company.id}`
+                        )
+                      }
+                      className="bg-blue-500 hover:bg-blue-600 transition px-6 py-4 rounded-2xl text-lg font-bold"
+                    >
+                      Editar Empresa
+                    </button>
+
+                    <button
+                      onClick={() =>
+                        deleteCompany(company.id)
+                      }
+                      className="bg-red-500 hover:bg-red-600 transition px-6 py-4 rounded-2xl text-lg font-bold"
+                    >
+                      Excluir Empresa
+                    </button>
+
+                  </div>
+
+                </div>
+
+              </div>
+
+            ))}
+
+          </div>
+
+        )}
 
       </div>
 
