@@ -14,7 +14,6 @@ interface Company {
 }
 
 export default function MasterPage() {
-
   const router = useRouter()
 
   const [companies, setCompanies] =
@@ -24,9 +23,7 @@ export default function MasterPage() {
     useState(true)
 
   useEffect(() => {
-
     fetchCompanies()
-
   }, [])
 
   const fetchCompanies = async () => {
@@ -142,14 +139,29 @@ export default function MasterPage() {
 
                   </div>
 
-                  <button
-                    onClick={() =>
-                      deleteCompany(company.id)
-                    }
-                    className="bg-red-500 hover:bg-red-600 transition px-6 py-4 rounded-2xl text-lg font-bold"
-                  >
-                    Excluir Empresa
-                  </button>
+                  <div className="flex gap-4">
+
+                    <button
+                      onClick={() =>
+                        router.push(
+                          `/master/edit/${company.id}`
+                        )
+                      }
+                      className="bg-blue-500 hover:bg-blue-600 transition px-6 py-4 rounded-2xl text-lg font-bold"
+                    >
+                      Editar Empresa
+                    </button>
+
+                    <button
+                      onClick={() =>
+                        deleteCompany(company.id)
+                      }
+                      className="bg-red-500 hover:bg-red-600 transition px-6 py-4 rounded-2xl text-lg font-bold"
+                    >
+                      Excluir Empresa
+                    </button>
+
+                  </div>
 
                 </div>
 

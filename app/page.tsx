@@ -1,8 +1,11 @@
+import Link from 'next/link'
+
 export default function Home() {
   return (
     <main className="min-h-screen bg-black text-white flex items-center justify-center">
       <div className="text-center">
-        <h1 className="text-5xl font-bold mb-4">
+
+        <h1 className="text-6xl font-bold mb-6">
           Barber SaaS
         </h1>
 
@@ -10,9 +13,13 @@ export default function Home() {
           Sistema inteligente para agendamento de barbearias
         </p>
 
-        <button className="bg-white text-black px-6 py-3 rounded-xl font-semibold hover:scale-105 transition">
+        <Link
+          href="/register"
+          className="bg-white text-black px-6 py-3 rounded-xl font-semibold hover:scale-105 transition inline-block"
+        >
           Começar Agora
-        </button>
+        </Link>
+
       </div>
     </main>
   )
