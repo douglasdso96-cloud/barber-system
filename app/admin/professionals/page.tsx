@@ -37,9 +37,13 @@ export default function ProfessionalsPage() {
 
   const fetchProfessionals = async () => {
 
+    const companyId =
+      localStorage.getItem('company_id')
+
     const { data, error } = await supabase
       .from('professionals')
       .select('*')
+      .eq('company_id', companyId)
       .order('created_at', { ascending: false })
 
     if (error) {
@@ -59,12 +63,16 @@ export default function ProfessionalsPage() {
       return
     }
 
+    const companyId =
+      localStorage.getItem('company_id')
+
     const { error } = await supabase
       .from('professionals')
       .insert([
         {
           name,
-          specialty
+          specialty,
+          company_id: companyId
         }
       ])
 

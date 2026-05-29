@@ -24,9 +24,13 @@ export default function AppointmentsPage() {
 
   const fetchAppointments = async () => {
 
+    const companyId =
+      localStorage.getItem('company_id')
+
     const { data, error } = await supabase
       .from('appointments')
       .select('*')
+      .eq('company_id', companyId)
       .order('appointment_date', { ascending: true })
 
     if (error) {
@@ -139,7 +143,6 @@ export default function AppointmentsPage() {
                       <span
                         className={`
                           px-4 py-2 rounded-full text-sm font-bold
-
                           ${appointment.status === 'cancelled'
                             ? 'bg-red-500/20 text-red-400'
                             : 'bg-green-500/20 text-green-400'
@@ -159,7 +162,11 @@ export default function AppointmentsPage() {
                   {appointment.status !== 'cancelled' && (
 
                     <button
-                      onClick={() => cancelAppointment(appointment.id)}
+                      onClick={() =>
+                        cancelAppointment(
+                          appointment.id
+                        )
+                      }
                       className="bg-red-500 hover:bg-red-600 transition px-6 py-3 rounded-2xl font-bold"
                     >
                       Cancelar
